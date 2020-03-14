@@ -23,8 +23,8 @@ namespace AuthorizationService.Controllers
             _interactionService = interactionService;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Register(RegisterRequest request)
+        [HttpPost("register")]
+        public async Task<ActionResult> Register([FromBody] RegisterRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -52,7 +52,7 @@ namespace AuthorizationService.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login([FromBody]LoginRequest request)
+        public async Task<IActionResult> Login(LoginRequest request)
         {
             var loginResult = await _signInManager.PasswordSignInAsync(
                 request.Username, 

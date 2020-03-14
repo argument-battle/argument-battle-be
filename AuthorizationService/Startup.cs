@@ -1,21 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using AuthorizationService.DataAccess;
-using IdentityServer4.EntityFramework.DbContexts;
-using IdentityServer4.EntityFramework.Mappers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace AuthorizationService
 {
@@ -33,7 +24,7 @@ namespace AuthorizationService
             var connectionString = Configuration.GetConnectionString("DefaultConnection");
             services.AddDbContext<AuthDbContext>(config =>
             {
-                config.UseNpgsql(connectionString);
+                config.UseInMemoryDatabase("Memory");
             });
 
             services.AddIdentity<IdentityUser, IdentityRole>(config =>
@@ -59,31 +50,21 @@ namespace AuthorizationService
 
             services.AddIdentityServer()
                 .AddAspNetIdentity<IdentityUser>()
-                .AddConfigurationStore(options =>
-                {
-                    options.ConfigureDbContext = db => db.UseNpgsql(connectionString,
-                        plsql => plsql.MigrationsAssembly(migrationsAssembly));
-                })
-                .AddOperationalStore(options =>
-                {
-                    options.ConfigureDbContext = db => db.UseNpgsql(connectionString,
-                        plsql => plsql.MigrationsAssembly(migrationsAssembly));
-                })
+                .AddInMemoryIdentityResources(Config.GetIdentityResources())
+                .AddInMemoryClients(Config.GetClients())
+                .AddInMemoryApiResources(Config.GetApis())
                 .AddDeveloperSigningCredential();
 
-            services.AddControllersWithViews();
+            services.AddControllers();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            InitializeDatabase(app);
 
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
-
-            app.UseHttpsRedirection();
 
             app.UseRouting();
 
@@ -93,46 +74,6 @@ namespace AuthorizationService
             {
                 endpoints.MapDefaultControllerRoute();
             });
-        }
-
-        private void InitializeDatabase(IApplicationBuilder app)
-        {
-            using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
-            {
-                serviceScope.ServiceProvider
-                    .GetRequiredService<PersistedGrantDbContext>()
-                    .Database
-                    .Migrate();
-
-                var context = serviceScope.ServiceProvider
-                    .GetRequiredService<ConfigurationDbContext>();
-
-                context.Database.Migrate();
-
-                if (!context.Clients.Any())
-                {
-                    context.AddRange(Config.GetClients().
-                        Select(c => c.ToEntity()));
-
-                    context.SaveChanges();
-                }
-
-                if (!context.IdentityResources.Any())
-                {
-                    context.AddRange(Config.GetIdentityResources()
-                        .Select(r => r.ToEntity()));
-
-                    context.SaveChanges();
-                }
-
-                if (!context.ApiResources.Any())
-                {
-                    context.AddRange(Config.GetApis()
-                        .Select(api => api.ToEntity()));
-
-                    context.SaveChanges();
-                }
-            }
         }
     }
 }
