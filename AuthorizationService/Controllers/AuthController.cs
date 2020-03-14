@@ -2,12 +2,11 @@
 using IdentityServer4.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace AuthorizationService.Controllers
 {
-    public class AuthController : ControllerBase
+    public class AuthController : Controller
     {
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
@@ -28,27 +27,19 @@ namespace AuthorizationService.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new
-                {
-                    Message = "Failed to create user.",
-                    Errors = ModelState.Values.SelectMany(v => v.Errors)
-                });
+                return View(request);
             }
 
             var user = new IdentityUser(request.Username);
             var result = await _userManager.CreateAsync(user, request.Password);
 
-            if (!result.Succeeded)
+            if (result.Succeeded)
             {
-                return BadRequest(new
-                {
-                    Message = "Failed to create user.",
-                    Errors = result.Errors.Select(err => err.Description)
-                });
+                await _signInManager.SignInAsync(user, false);
+                return Redirect(request.RedirectUrl);
             }
 
-            await _signInManager.SignInAsync(user, false);
-            return Redirect(request.RedirectUrl);
+            return View();
         }
 
         [HttpPost]
@@ -63,10 +54,12 @@ namespace AuthorizationService.Controllers
             {
                 return Redirect(request.RedirectUrl);
             } 
-            else
+            else if (loginResult.IsLockedOut)
             {
-                return Unauthorized();
+
             }
+
+            return View();
         }
 
         [HttpGet]
@@ -77,6 +70,24 @@ namespace AuthorizationService.Controllers
             var logoutRequest = await _interactionService.GetLogoutContextAsync(logoutId);
 
             return Redirect(logoutRequest.PostLogoutRedirectUri);
+        }
+
+        [HttpGet]
+        public IActionResult Login(string returnUrl)
+        {
+            return View(new LoginRequest
+            {
+                RedirectUrl = returnUrl
+            });
+        }
+
+        [HttpGet]
+        public IActionResult Register(string returnUrl)
+        {
+            return View(new RegisterRequest 
+            { 
+                RedirectUrl = returnUrl 
+            });
         }
     }
 }

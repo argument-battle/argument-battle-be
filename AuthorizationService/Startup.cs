@@ -55,7 +55,7 @@ namespace AuthorizationService
                 .AddInMemoryApiResources(Config.GetApis())
                 .AddDeveloperSigningCredential();
 
-            services.AddControllers();
+            services.AddControllersWithViews();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
