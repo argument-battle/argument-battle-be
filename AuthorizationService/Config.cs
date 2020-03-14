@@ -31,9 +31,9 @@ namespace AuthorizationService
                     RequirePkce = true,
                     RequireClientSecret = false,
 
-                    RedirectUris = {""},
-                    PostLogoutRedirectUris = {"front-end-sign-in-page-urlas"},
-                    AllowedCorsOrigins = {"fronto origin"},
+                    RedirectUris = { "http://localhost:3061/create" },
+                    PostLogoutRedirectUris = {"http://localhost:3061/battle"},
+                    AllowedCorsOrigins = {"http://localhost:3061"},
 
                     AllowedScopes =
                     {
@@ -41,8 +41,8 @@ namespace AuthorizationService
                         IdentityServerConstants.StandardScopes.OpenId,
                         IdentityServerConstants.StandardScopes.Email
                     },
-
-                    AccessTokenLifetime = 1,
+               
+                    AccessTokenLifetime = 3600,
                     AllowAccessTokensViaBrowser = true,
                     RequireConsent = false
                 }
